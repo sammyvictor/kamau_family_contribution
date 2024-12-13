@@ -1,11 +1,11 @@
 import random
 
 from datetime import date, timedelta
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 
 
 def shuffle_members(families_list):
-    
+
     for family in families_list.values():
         random.shuffle(family)
 
@@ -72,6 +72,37 @@ def save_timetable_to_excel(timetable, filename='kamau_family_contribution.xlsx'
     tt_ws = kamau_wb.active
     tt_ws.title = 'Timetable'
     # Add headers
+    tt_ws.append(["DAY", "DATE", "LEADER"])
+
+    # Add the data
+    for current_date, leader in timetable.items():
+        formatted_day = current_date.strftime("%A")
+        formatted_date = current_date.strftime("%d-%m-%Y")
+        tt_ws.append([formatted_date, formatted_day, leader])
+    kamau_wb.save(filename)
+
+
+def rewrite_timetable_in_excel(timetable, filename='kamau_family_contribution.xlsx'):
+    try:
+        # Load the existing workbook
+        kamau_wb = load_workbook(filename)
+    except FileNotFoundError:
+        # If the file doesn't exist, create a new workbook
+        kamau_wb = Workbook()
+
+    # Check if the 'Timetable' worksheet exists
+    if 'Timetable' in kamau_wb.sheetnames:
+        tt_ws = kamau_wb['Timetable']
+        # Clear existing data
+        for row in tt_ws.iter_rows(min_row=2, max_row=tt_ws.max_row, max_col=tt_ws.max_column):
+            for cell in row:
+                cell.value = None
+    else:
+        # Create a new worksheet if it doesn't exist
+        tt_ws = kamau_wb.create_sheet('Timetable')
+
+    # Add headers (overwrite if they already exist)
+    tt_ws.delete_rows(1, 1)
     tt_ws.append(["DATE", "DAY", "LEADER"])
 
     # Add the data
@@ -79,4 +110,6 @@ def save_timetable_to_excel(timetable, filename='kamau_family_contribution.xlsx'
         formatted_date = current_date.strftime("%d-%m-%Y")
         formatted_day = current_date.strftime("%A")
         tt_ws.append([formatted_date, formatted_day, leader])
+
+    # Save the workbook (rewriting the file)
     kamau_wb.save(filename)
